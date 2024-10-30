@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   Button,
   Label,
@@ -9,26 +10,27 @@ import {
   ErrorMessage,
 } from "../../components";
 import { useForm, Controller } from "react-hook-form";
-import { useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod"
 
-interface FormInputTipos {
-  nome: string;
-  email: string;
-  telefone: string;
-  senha: string;
-  senhaVerificada: string;
-}
+const esquemaCadastro = z.object({
+  nome: z.string().min(5, "O campo nome é obrigatório"),
+  email: z.string().min(1, "O campo e-mail é obrigatório").email("Digite um email válido"),
+  telefone: z.string(),
+  senha: z.string().min(6, "A senha deve ter pelo menos 6 digitos"),
+  senhaVerificada: z.string().min(1, "O campo deve ser preenchido"),
+})
+
+type FormInputTipos = z.infer<typeof esquemaCadastro>;
 
 const CadastroPessoal = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitSuccessful },
-    watch,
+    formState: { errors },
     control,
-    reset,
   } = useForm<FormInputTipos>({
     mode: "all",
+    resolver: zodResolver(esquemaCadastro),
     defaultValues: {
       nome: "",
       email: "",
@@ -38,32 +40,9 @@ const CadastroPessoal = () => {
     },
   });
 
-  useEffect(() => {
-    reset();
-  }, [reset, isSubmitSuccessful]);
-
   const aoSubmeter = (dados: FormInputTipos) => {
     console.log(dados);
   };
-
-  const senha = watch("senha");
-
-  const validaSenha = {
-    obrigatorio: (val: string) =>
-      !!val || "Por favor, insira a senha novamente",
-    tamanhoMinimo: (val: string) =>
-      val.length >= 6 || "A senha deve ter pelo menos 6 caracteres",
-    senhaIguais: (val: string) => val === senha || "As senhas não correspondem",
-  };
-
-  function validarEmail(valor: string) {
-    const formatoEmail = /^[^\s@]+@alura\.com\.br$/;
-    if (!formatoEmail.test(valor)) {
-      console.error("Endereço de email é inválido para este domínio");
-      return false;
-    }
-    return true;
-  }
 
   return (
     <>
@@ -76,13 +55,7 @@ const CadastroPessoal = () => {
             placeholder="Digite seu nome completo"
             type="text"
             $error={!!errors.nome}
-            {...register("nome", {
-              required: "Campo de nome é obrigatório",
-              minLength: {
-                value: 5,
-                message: "O nome deve ter pelo menos cinco caracteres",
-              },
-            })}
+            {...register("nome")}
           />
           {errors.nome && <ErrorMessage>{errors.nome.message}</ErrorMessage>}
         </Fieldset>
@@ -93,10 +66,7 @@ const CadastroPessoal = () => {
             placeholder="Insira seu endereço de email"
             type="email"
             $error={!!errors.email}
-            {...register("email", {
-              required: "O campo de email é obrigatório",
-              validate: validarEmail,
-            })}
+            {...register("email")}
           />
           {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
         </Fieldset>
@@ -133,13 +103,7 @@ const CadastroPessoal = () => {
             placeholder="Crie uma senha"
             type="password"
             $error={!!errors.senha}
-            {...register("senha", {
-              required: "O campo de senha é obrigatório",
-              minLength: {
-                value: 6,
-                message: "A senha deve ter pelo menos seis caracteres",
-              },
-            })}
+            {...register("senha")}
           />
           {errors.senha && <ErrorMessage>{errors.senha.message}</ErrorMessage>}
         </Fieldset>
@@ -150,10 +114,7 @@ const CadastroPessoal = () => {
             placeholder="Repita a senha anterior"
             type="password"
             $error={!!errors.senhaVerificada}
-            {...register("senhaVerificada", {
-              required: "Repita a senha",
-              validate: validaSenha,
-            })}
+            {...register("senhaVerificada")}
           />
           {errors.senhaVerificada && (
             <ErrorMessage>{errors.senhaVerificada.message}</ErrorMessage>
