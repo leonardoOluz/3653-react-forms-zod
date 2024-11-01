@@ -13,11 +13,30 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 
 const esquemaCadastro = z.object({
-  nome: z.string().min(5, "O campo nome é obrigatório"),
-  email: z.string().min(1, "O campo e-mail é obrigatório").email("Digite um email válido"),
-  telefone: z.string(),
+  nome: z
+    .string()
+    .min(5, "O campo nome é obrigatório")
+    .transform((value: string) => {
+      const newValue = value.split(" ");
+      return newValue.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLocaleLowerCase()).join(" ");
+    })
+  ,
+  email: z
+    .string()
+    .min(1, "O campo e-mail é obrigatório")
+    .email("Digite um email válido")
+    .transform((email) => email.toLowerCase()),
+  telefone: z
+    .string()
+    .min(1, "O campo telefone é obrigatório")	
+    .regex(/^\(\d{2,3}\) \d{5}-\d{4}$/, "O telefone inserido está no formato incorreto"),
   senha: z.string().min(6, "A senha deve ter pelo menos 6 digitos"),
-  senhaVerificada: z.string().min(1, "O campo deve ser preenchido"),
+  senhaVerificada: z
+    .string()
+    .min(1, "O campo deve ser preenchido"),
+}).refine((data) => data.senha === data.senhaVerificada, {
+  message: "As senhas devem ser iguais",
+  path: ["senhaVerificada"],
 })
 
 type FormInputTipos = z.infer<typeof esquemaCadastro>;
@@ -73,13 +92,6 @@ const CadastroPessoal = () => {
         <Controller
           control={control}
           name="telefone"
-          rules={{
-            pattern: {
-              value: /^\(\d{2,3}\) \d{5}-\d{4}$/,
-              message: "O telefone inserido está no formato incorreto",
-            },
-            required: "O campo telefone é obrigatório",
-          }}
           render={({ field }) => (
             <Fieldset>
               <Label>Telefone</Label>
@@ -95,7 +107,6 @@ const CadastroPessoal = () => {
             </Fieldset>
           )}
         />
-
         <Fieldset>
           <Label htmlFor="campo-senha">Crie uma senha</Label>
           <Input
