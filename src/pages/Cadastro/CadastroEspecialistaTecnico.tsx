@@ -3,6 +3,7 @@ import {
   Button,
   ButtonContainer,
   Divisor,
+  ErrorMessage,
   Fieldset,
   Form,
   FormContainer,
@@ -11,12 +12,15 @@ import {
   Titulo,
 } from "../../components";
 import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const esquemaCadastroEspecialista = z.object({
   crm: z.string().min(1, "O campo CRM é obrigatório"),
   especialidades: z.array(z.object({
     especialidade: z.string().min(1, "O campo especialidade é obrigatório"),
-    anoConclusao: z.number().min(1, "Preencha o ano de conclusão"),
+    anoConclusao: z.coerce.number({
+      errorMap: () => ({ message: "Preencha o ano de conclusão, somente numérico" })
+    }).min(1, "Preencha o ano de conclusão"),
     instituicao: z.string().min(1, "Preencha a instituição de ensino"),
   }))
 })
@@ -24,7 +28,13 @@ const esquemaCadastroEspecialista = z.object({
 type FormEspecialista = z.infer<typeof esquemaCadastroEspecialista>;
 
 const CadastroEspecialistaTecnico = () => {
-  const { register, handleSubmit, control } = useForm<FormEspecialista>();
+  const { register, handleSubmit, formState: { errors }, control } = useForm<FormEspecialista>({
+    resolver: zodResolver(esquemaCadastroEspecialista),
+    mode: "all",
+    defaultValues: {
+      crm: ""
+    }
+  });
 
   const aoSubmit = (dados: FormEspecialista) => {
     console.log(dados);
@@ -42,6 +52,7 @@ const CadastroEspecialistaTecnico = () => {
       instituicao: ""
     })
   }
+  
   return (
     <>
       <Titulo className="titulo">Agora, seus dados técnicos:</Titulo>
@@ -51,9 +62,11 @@ const CadastroEspecialistaTecnico = () => {
           <Input
             id="campo-crm"
             type="text"
+            $error={!!errors.crm}
             placeholder="Insira seu número de registro"
             {...register("crm")}
           />
+          {errors.crm && <ErrorMessage>{errors.crm.message}</ErrorMessage>}
         </Fieldset>
         <Divisor />
         {fields.map((field, index) => (
@@ -64,8 +77,15 @@ const CadastroEspecialistaTecnico = () => {
                 id="campo-especialidade"
                 type="text"
                 placeholder="Qual sua especialidade?"
+                $error={!!errors.especialidades?.[index]?.especialidade}
                 {...register(`especialidades.${index}.especialidade`)}
               />
+              {
+                errors.especialidades?.[index]?.especialidade &&
+                <ErrorMessage>
+                  {errors.especialidades?.[index].especialidade.message}
+                </ErrorMessage>
+              }
             </Fieldset>
 
             <FormContainer>
@@ -75,8 +95,15 @@ const CadastroEspecialistaTecnico = () => {
                   id="campo-ano-conclusao"
                   type="text"
                   placeholder="EX: 2005"
+                  $error={!!errors.especialidades?.[index]?.anoConclusao}
                   {...register(`especialidades.${index}.anoConclusao`)}
                 />
+                {
+                  errors.especialidades?.[index]?.anoConclusao &&
+                  <ErrorMessage>
+                    {errors.especialidades?.[index].anoConclusao.message}
+                  </ErrorMessage>
+                }
               </Fieldset>
               <Fieldset>
                 <Label>Instituição de ensino</Label>
@@ -84,8 +111,15 @@ const CadastroEspecialistaTecnico = () => {
                   id="campo-instituicao-ensino"
                   type="text"
                   placeholder="USP"
+                  $error={!!errors.especialidades?.[index]?.instituicao}
                   {...register(`especialidades.${index}.instituicao`)}
                 />
+                {
+                  errors.especialidades?.[index]?.instituicao &&
+                  <ErrorMessage>
+                    {errors.especialidades?.[index].instituicao.message}
+                  </ErrorMessage>
+                }
               </Fieldset>
             </FormContainer>
           </div>
